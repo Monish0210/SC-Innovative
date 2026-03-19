@@ -20,10 +20,16 @@ type DiseaseResult = {
 
 type FuzzyDetail = {
 	symptom: string
+	weight: number
 	mu_low: number
 	mu_medium: number
 	mu_high: number
 	mf_sum: number
+	input_centroid: number
+	dominant_set: "LOW" | "MEDIUM" | "HIGH"
+	p_laplace: number
+	evidence_score: number
+	top_disease: string
 }
 
 type DiagnosisResponse = {
@@ -31,6 +37,7 @@ type DiagnosisResponse = {
 	all_results: DiseaseResult[]
 	fuzzy_details: FuzzyDetail[]
 	cluster_scores: Record<string, number>
+	top_disease?: string
 	graph_data: {
 		nodes: Array<{ id: string; label: string; type: string }>
 		edges: Array<{ source: string; target: string; weight: number; type: string }>

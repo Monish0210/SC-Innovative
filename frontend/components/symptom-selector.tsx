@@ -32,7 +32,7 @@ export function SymptomSelector({ selectedSymptoms, onChange }: SymptomSelectorP
 		const fetchSymptoms = async () => {
 			setLoading(true)
 			try {
-				const response = await fetch("http://localhost:8000/api/symptoms")
+				const response = await fetch("/api/symptoms")
 				if (!response.ok) {
 					throw new Error("Failed to fetch symptoms")
 				}

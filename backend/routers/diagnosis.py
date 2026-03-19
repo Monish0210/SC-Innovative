@@ -43,6 +43,7 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 
 	all_results = bayesian_network.infer(selected_symptoms)
 	top5 = all_results[:5]
+	top_disease = top5[0]["disease"] if top5 else ""
 
 	cluster_scores = fuzzy_engine.compute_cluster_scores(
 		selected_symptoms,
@@ -50,12 +51,20 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 		data_loader.cluster_map,
 	)
 
-	fuzzy_details = [
-		fuzzy_engine.fuzzify_detail(symptom, data_loader.severity_dict)
-		for symptom in selected_symptoms
-	]
+	fuzzy_details = []
+	for symptom in selected_symptoms:
+		detail = fuzzy_engine.fuzzify_detail(symptom, data_loader.severity_dict)
+		p_laplace = bayesian_network.symptom_cpt.get(top_disease, {}).get(symptom, 1 / 98)
+		evidence_score = fuzzy_engine.compute_evidence(
+			symptom=symptom,
+			disease=top_disease,
+			symptom_cpt=bayesian_network.symptom_cpt,
+		)
+		detail["p_laplace"] = p_laplace
+		detail["evidence_score"] = evidence_score
+		detail["top_disease"] = top_disease
+		fuzzy_details.append(detail)
 
-	top_disease = top5[0]["disease"] if top5 else ""
 	graph_data = bayesian_network.get_graph_data(
 		selected_symptoms=selected_symptoms,
 		cluster_scores=cluster_scores,
@@ -67,6 +76,7 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 		"all_results": all_results,
 		"fuzzy_details": fuzzy_details,
 		"cluster_scores": cluster_scores,
+		"top_disease": top_disease,
 		"graph_data": graph_data,
 	}
 
