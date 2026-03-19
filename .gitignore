@@ -1,3 +1,10 @@
 frontend/.env
 frontend/.env.local
 backend/.env
+
+# Python backend artifacts
+backend/__pycache__/
+backend/**/__pycache__/
+*.py[cod]
+backend/.venv/
+backend/.pytest_cache/
