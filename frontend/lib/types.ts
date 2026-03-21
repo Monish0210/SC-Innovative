@@ -20,30 +20,12 @@ export type DiseaseResult = {
 	cluster_contributions: Record<string, number>
 }
 
-export type GraphNode = {
-	id: string
-	type: "disease" | "cluster" | "symptom"
-	label: string
-	score: number
-}
-
-export type GraphEdge = {
-	source: string
-	target: string
-	weight: number
-	type?: string
-}
-
 export type DiagnosisResponse = {
 	top5: DiseaseResult[]
 	all_results: DiseaseResult[]
 	fuzzy_details: FuzzyDetail[]
 	cluster_scores: Record<string, number>
 	top_disease?: string
-	graph_data: {
-		nodes: GraphNode[]
-		edges: GraphEdge[]
-	}
 }
 
 export type MetricsResponse = {

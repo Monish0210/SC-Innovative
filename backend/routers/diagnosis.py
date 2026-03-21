@@ -68,19 +68,11 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 		detail["top_disease"] = top_disease
 		fuzzy_details.append(detail)
 
-	graph_data = bayesian_network.get_graph_data(
-		selected_symptoms=selected_symptoms,
-		cluster_scores=cluster_scores,
-		top_disease=top_disease,
-		cpt_snapshot=cpt_snapshot,
-	)
-
 	return {
 		"top5": top5,
 		"all_results": all_results,
 		"fuzzy_details": fuzzy_details,
 		"cluster_scores": cluster_scores,
 		"top_disease": top_disease,
-		"graph_data": graph_data,
 	}
 

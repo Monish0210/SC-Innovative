@@ -92,11 +92,6 @@ export default function DashboardPage() {
 					) : diagnosisResult ? (
 						<>
 							<ResultsPanel results={diagnosisResult.top5} />
-							<Card>
-								<CardContent className="py-4 text-sm text-muted-foreground">
-									Detailed Bayesian graph has been moved to the Graph tab for a cleaner diagnosis view.
-								</CardContent>
-							</Card>
 						</>
 					) : (
 						<Card>

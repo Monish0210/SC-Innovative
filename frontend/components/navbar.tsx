@@ -13,7 +13,6 @@ import { authClient } from "@/lib/auth-client"
 const links = [
 	{ href: "/dashboard", label: "Diagnosis" },
 	{ href: "/dashboard/history", label: "History" },
-	{ href: "/dashboard/metrics", label: "Graph" },
 ]
 
 export function Navbar({ userEmail }: { userEmail: string }) {

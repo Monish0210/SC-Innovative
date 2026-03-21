@@ -1,6 +1,7 @@
 frontend/.env
 frontend/.env.local
 backend/.env
+.venv/
 
 # Python backend artifacts
 backend/__pycache__/
@@ -8,3 +9,9 @@ backend/**/__pycache__/
 *.py[cod]
 backend/.venv/
 backend/.pytest_cache/
+
+# General local caches
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.ipynb_checkpoints/
