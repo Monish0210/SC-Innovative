@@ -17,8 +17,15 @@ class BayesianNetwork:
 	def __init__(self, data_loader: DataLoader, fuzzy_engine: FuzzyEngine):
 		self.data_loader = data_loader
 		self.fuzzy_engine = fuzzy_engine
-		self.symptom_cpt: dict[str, dict[str, float]] = {}
-		self.cluster_cpt: dict[str, dict[str, float]] = {}
+		self._cpt = ({}, {})
+
+	@property
+	def symptom_cpt(self) -> dict[str, dict[str, float]]:
+		return self._cpt[0]
+
+	@property
+	def cluster_cpt(self) -> dict[str, dict[str, float]]:
+		return self._cpt[1]
 
 	def build_cpt(self, training_df: pd.DataFrame) -> None:
 		symptom_cols = [f"Symptom_{i}" for i in range(1, 18)]
@@ -28,34 +35,48 @@ class BayesianNetwork:
 			lambda col: col.str.strip()
 		)
 
+		new_symptom_cpt: dict[str, dict[str, float]] = {}
+		new_cluster_cpt: dict[str, dict[str, float]] = {}
+
 		for disease in self.data_loader.all_diseases:
 			rows_d = trimmed[trimmed["Disease"] == disease]
 			n = len(rows_d)
-			if n == 0:
-				continue
-
 			rows_symptoms = rows_d[symptom_cols]
-			symptom_counts = (
-				rows_symptoms.stack().loc[lambda s: s.ne("")].value_counts().to_dict()
-			)
 
-			self.symptom_cpt[disease] = {}
+			new_symptom_cpt[disease] = {}
 			for symptom in self.data_loader.all_symptoms:
-				count = int(symptom_counts.get(symptom, 0))
-				self.symptom_cpt[disease][symptom] = (count + 1) / (n + 2)
+				count = int(
+					rows_symptoms.apply(
+						lambda row: row.eq(symptom).any(),
+						axis=1,
+					).sum()
+				)
+				new_symptom_cpt[disease][symptom] = (count + 1) / (n + 2)
 
-			self.cluster_cpt[disease] = {}
+			new_cluster_cpt[disease] = {}
 			for cluster_name, cluster_symptoms in self.data_loader.cluster_map.items():
 				symptom_set = set(cluster_symptoms)
-				count = int(rows_symptoms.isin(symptom_set).any(axis=1).sum())
-				self.cluster_cpt[disease][cluster_name] = count / n
+				count = int(
+					rows_symptoms.apply(
+						lambda row: bool(set(row) & symptom_set),
+						axis=1,
+					).sum()
+				)
+				new_cluster_cpt[disease][cluster_name] = count / n if n > 0 else 0.0
+
+		self._cpt = (new_symptom_cpt, new_cluster_cpt)
 
 	def infer(
 		self,
 		selected_symptoms: list[str],
 		binary_mode: bool = False,
+		cpt_snapshot: tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]] | None = None,
 	) -> list[dict[str, Any]]:
+		if not self.data_loader.all_diseases:
+			return []
 		EPSILON = 1e-3
+		symptom_cpt, cluster_cpt = cpt_snapshot if cpt_snapshot is not None else self._cpt
+		selected_symptoms = list(dict.fromkeys(selected_symptoms))
 
 		cluster_scores = self.fuzzy_engine.compute_cluster_scores(
 			selected_symptoms,
@@ -70,7 +91,7 @@ class BayesianNetwork:
 				ev = self.fuzzy_engine.compute_evidence(
 					symptom,
 					disease,
-					self.symptom_cpt,
+					symptom_cpt,
 					binary_mode=binary_mode,
 				)
 				log_ll += math.log(ev + EPSILON)
@@ -83,22 +104,27 @@ class BayesianNetwork:
 		if total > 0:
 			posterior = {d: (raw[d] / total) * 100 for d in raw}
 		else:
-			uniform_probability = 100 / 41
+			n_diseases = len(self.data_loader.all_diseases)
+			uniform_probability = 100 / max(n_diseases, 1)
 			posterior = {d: uniform_probability for d in self.data_loader.all_diseases}
 
 		results: list[dict[str, Any]] = []
 		for disease in self.data_loader.all_diseases:
+			disease_cluster_contributions = {
+				cluster: round(
+					score * cluster_cpt.get(disease, {}).get(cluster, 0.0),
+					4,
+				)
+				for cluster, score in cluster_scores.items()
+				if score > 0
+			}
 			results.append(
 				{
 					"disease": disease,
 					"probability": posterior[disease],
 					"description": self.data_loader.descriptions.get(disease, ""),
 					"precautions": self.data_loader.precautions.get(disease, []),
-					"cluster_contributions": {
-						cluster: score
-						for cluster, score in cluster_scores.items()
-						if score > 0
-					},
+					"cluster_contributions": disease_cluster_contributions,
 				}
 			)
 
@@ -110,7 +136,9 @@ class BayesianNetwork:
 		selected_symptoms: list[str],
 		cluster_scores: dict[str, float],
 		top_disease: str,
+		cpt_snapshot: tuple[dict[str, dict[str, float]], dict[str, dict[str, float]]] | None = None,
 	) -> dict[str, list[dict[str, Any]]]:
+		symptom_cpt, cluster_cpt = cpt_snapshot if cpt_snapshot is not None else self._cpt
 		nodes: list[dict[str, Any]] = []
 		edges: list[dict[str, Any]] = []
 
@@ -143,7 +171,7 @@ class BayesianNetwork:
 			)
 
 		for cluster_name in self.data_loader.cluster_map.keys():
-			weight = self.cluster_cpt.get(top_disease, {}).get(cluster_name, 0.0)
+			weight = cluster_cpt.get(top_disease, {}).get(cluster_name, 0.0)
 			edges.append(
 				{
 					"source": cluster_name,

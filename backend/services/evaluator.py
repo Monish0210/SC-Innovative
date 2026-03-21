@@ -84,8 +84,12 @@ class Evaluator:
 		top1_hits, top5_hits = evaluate_loop(binary_mode=False)
 		evaluated_rows = int(sum(sum(row.values()) for row in confusion.values()))
 
-		top1_accuracy = (top1_hits / total_test_rows) * 100 if total_test_rows else 0.0
-		top5_accuracy = (top5_hits / total_test_rows) * 100 if total_test_rows else 0.0
+		if evaluated_rows == 0:
+			top1_accuracy = 0.0
+			top5_accuracy = 0.0
+		else:
+			top1_accuracy = (top1_hits / evaluated_rows) * 100
+			top5_accuracy = (top5_hits / evaluated_rows) * 100
 
 		f1_scores: dict[str, float] = {}
 		for disease in all_diseases:
@@ -102,7 +106,7 @@ class Evaluator:
 
 		binary_top1_hits, _ = evaluate_loop(binary_mode=True)
 		binary_top1 = (
-			(binary_top1_hits / total_test_rows) * 100 if total_test_rows else 0.0
+			(binary_top1_hits / evaluated_rows) * 100 if evaluated_rows else 0.0
 		)
 
 		return {
@@ -111,6 +115,9 @@ class Evaluator:
 				"test_rows": len(test_df),
 				"evaluated_rows": evaluated_rows,
 			},
+			"evaluated_rows": evaluated_rows,
+			"total_test_rows": total_test_rows,
+			"skipped_rows": total_test_rows - evaluated_rows,
 			"test_size": len(test_df),
 			"fuzzy_top1": top1_accuracy,
 			"top1_accuracy": top1_accuracy,

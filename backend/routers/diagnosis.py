@@ -27,8 +27,11 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 	data_loader = request.app.state.data_loader
 	fuzzy_engine = request.app.state.fuzzy_engine
 	bayesian_network = request.app.state.bayesian_network
+	cpt_snapshot = request.app.state.bayesian_network._cpt
+	snapshot_symptom_cpt, snapshot_cluster_cpt = cpt_snapshot
 
 	selected_symptoms = [symptom.strip() for symptom in payload.symptoms if symptom.strip()]
+	selected_symptoms = list(dict.fromkeys(selected_symptoms))
 	if not selected_symptoms:
 		raise HTTPException(status_code=400, detail="At least one symptom is required")
 
@@ -41,7 +44,7 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 			detail=f"Unknown symptoms: {unknown_symptoms}",
 		)
 
-	all_results = bayesian_network.infer(selected_symptoms)
+	all_results = bayesian_network.infer(selected_symptoms, cpt_snapshot=cpt_snapshot)
 	top5 = all_results[:5]
 	top_disease = top5[0]["disease"] if top5 else ""
 
@@ -54,11 +57,11 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 	fuzzy_details = []
 	for symptom in selected_symptoms:
 		detail = fuzzy_engine.fuzzify_detail(symptom, data_loader.severity_dict)
-		p_laplace = bayesian_network.symptom_cpt.get(top_disease, {}).get(symptom, 1 / 98)
+		p_laplace = snapshot_symptom_cpt.get(top_disease, {}).get(symptom, 1 / 98)
 		evidence_score = fuzzy_engine.compute_evidence(
 			symptom=symptom,
 			disease=top_disease,
-			symptom_cpt=bayesian_network.symptom_cpt,
+			symptom_cpt=snapshot_symptom_cpt,
 		)
 		detail["p_laplace"] = p_laplace
 		detail["evidence_score"] = evidence_score
@@ -69,6 +72,7 @@ def diagnose(payload: DiagnoseRequest, request: Request) -> dict:
 		selected_symptoms=selected_symptoms,
 		cluster_scores=cluster_scores,
 		top_disease=top_disease,
+		cpt_snapshot=cpt_snapshot,
 	)
 
 	return {

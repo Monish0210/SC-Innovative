@@ -9,7 +9,6 @@ except ModuleNotFoundError:
 
 
 EPSILON = 1e-3
-SEVERITY_GAMMA = 1.35
 
 
 def triangular_mf(x: float, a: float, peak: float, c: float) -> float:
@@ -40,14 +39,12 @@ def compute_evidence(
 	symptom_cpt: dict[str, dict[str, float]],
 	binary_mode: bool = False,
 ) -> float:
-	weight = severity_dict.get(symptom, 3)
-	ic = input_centroid(weight)
-	probability = symptom_cpt.get(disease, {}).get(symptom, 1 / 98)
-	strength = rule_strength(probability)
+	w = severity_dict.get(symptom, 3)
+	ic = input_centroid(w)
+	p = symptom_cpt.get(disease, {}).get(symptom, 1 / 98)
 	if binary_mode:
-		return 1.0 if probability >= 0.1 else 0.0
-	severity_factor = max(ic, 0.2) ** SEVERITY_GAMMA
-	return max(severity_factor * strength, EPSILON)
+		return 1.0 if p > 1 / 98 else 0.0
+	return ic * p
 
 
 def compute_cluster_scores(

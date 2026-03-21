@@ -318,7 +318,7 @@ export function BayesianGraph({ graphData, fuzzyDetails, topProbability, heightC
 						</div>
 						<div className="flex flex-wrap gap-2">
 							<Badge variant="outline">Nodes: {graphData.nodes.length}</Badge>
-							<Badge variant="outline">Edges: {graphData.edges.length}</Badge>
+							<Badge variant="outline">Edges: {flowEdges.length}</Badge>
 						</div>
 						<div className={`${heightClass} rounded-lg border bg-slate-50 dark:bg-slate-900`}>
 							<ReactFlow
