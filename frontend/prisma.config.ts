@@ -16,5 +16,7 @@ export default defineConfig({
 	datasource: {
 		url: env("DATABASE_URL"),
 	},
+	// prisma/config types in this setup don't include adapter yet, but runtime supports it.
+	// @ts-expect-error adapter is a valid runtime option for Prisma 7 with @prisma/adapter-pg.
 	adapter: async () => new PrismaPg({ connectionString: env("DATABASE_URL") }),
 })

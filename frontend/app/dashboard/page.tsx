@@ -91,7 +91,7 @@ export default function DashboardPage() {
 						</div>
 					) : diagnosisResult ? (
 						<>
-							<ResultsPanel results={diagnosisResult.top5} />
+							<ResultsPanel results={diagnosisResult.top5} topResult={diagnosisResult.top5[0]} />
 						</>
 					) : (
 						<Card>

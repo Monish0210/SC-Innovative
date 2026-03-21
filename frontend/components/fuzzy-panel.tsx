@@ -22,21 +22,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table"
+import type { FuzzyDetail } from "@/lib/types"
 import { cn } from "@/lib/utils"
-
-type FuzzyDetail = {
-	symptom: string
-	weight: number
-	mu_low: number
-	mu_medium: number
-	mu_high: number
-	mf_sum: number
-	input_centroid: number
-	dominant_set: "LOW" | "MEDIUM" | "HIGH"
-	p_laplace: number
-	evidence_score: number
-	top_disease: string
-}
 
 type FuzzyPanelProps = {
 	fuzzyDetails: FuzzyDetail[]
@@ -78,7 +65,7 @@ export function FuzzyPanel({ fuzzyDetails, clusterScores }: FuzzyPanelProps) {
 	}) => (
 		<Progress value={Math.max(0, Math.min(value * 100, 100))} indicatorClassName={indicatorClass}>
 			<ProgressLabel>{label}</ProgressLabel>
-			<ProgressValue>{value.toFixed(3)}</ProgressValue>
+			<ProgressValue>{() => value.toFixed(3)}</ProgressValue>
 		</Progress>
 	)
 
@@ -167,9 +154,9 @@ export function FuzzyPanel({ fuzzyDetails, clusterScores }: FuzzyPanelProps) {
 							{fuzzyDetails.map((detail) => (
 								<TableRow key={`${detail.symptom}-evidence`}>
 									<TableCell>{detail.symptom}</TableCell>
-									<TableCell>{detail.p_laplace.toFixed(6)}</TableCell>
+									<TableCell>{(detail.p_laplace ?? 0).toFixed(6)}</TableCell>
 									<TableCell>{detail.input_centroid.toFixed(3)}</TableCell>
-									<TableCell>{detail.evidence_score.toFixed(6)}</TableCell>
+									<TableCell>{(detail.evidence_score ?? 0).toFixed(6)}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>

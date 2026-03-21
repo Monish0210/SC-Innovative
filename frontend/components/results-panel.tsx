@@ -1,20 +1,25 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ChevronDown } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
 import { DiseaseDetail } from "@/components/disease-detail"
+import { DiseaseInfoCard } from "@/components/disease-info-card"
 import type { DiseaseResult } from "@/lib/types"
 
 type ResultsPanelProps = {
 	results: DiseaseResult[]
+	topResult?: DiseaseResult
 }
 
-export function ResultsPanel({ results }: ResultsPanelProps) {
+export function ResultsPanel({ results, topResult }: ResultsPanelProps) {
 	const [selectedDisease, setSelectedDisease] = useState<DiseaseResult | null>(null)
 	const [sheetOpen, setSheetOpen] = useState(false)
+	const [infoOpen, setInfoOpen] = useState(false)
 
 	const top5 = useMemo(() => results.slice(0, 5), [results])
 
@@ -74,11 +79,27 @@ export function ResultsPanel({ results }: ResultsPanelProps) {
 								</div>
 								<Progress value={Math.max(0, Math.min(item.probability, 100))}>
 									<ProgressLabel>Probability</ProgressLabel>
-									<ProgressValue>{item.probability.toFixed(2)}%</ProgressValue>
+									<ProgressValue>{() => `${item.probability.toFixed(2)}%`}</ProgressValue>
 								</Progress>
 							</button>
 						)
 					})}
+					{topResult ? (
+						<Collapsible open={infoOpen} onOpenChange={setInfoOpen} className="pt-1">
+							<CollapsibleTrigger className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700">
+								<ChevronDown className={`h-4 w-4 transition-transform ${infoOpen ? "rotate-180" : ""}`} />
+								{infoOpen ? "Hide disease information" : "Show disease information"}
+							</CollapsibleTrigger>
+							<CollapsibleContent className="mt-2">
+								<DiseaseInfoCard
+									disease={topResult.disease}
+									probability={topResult.probability}
+									description={topResult.description}
+									precautions={topResult.precautions}
+								/>
+							</CollapsibleContent>
+						</Collapsible>
+					) : null}
 					<p className="text-xs text-muted-foreground">
 						Educational only. Consult a doctor.
 					</p>
