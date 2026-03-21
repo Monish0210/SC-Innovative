@@ -111,6 +111,7 @@ class Evaluator:
 				"test_rows": len(test_df),
 				"evaluated_rows": evaluated_rows,
 			},
+			"test_size": len(test_df),
 			"fuzzy_top1": top1_accuracy,
 			"top1_accuracy": top1_accuracy,
 			"top5_accuracy": top5_accuracy,

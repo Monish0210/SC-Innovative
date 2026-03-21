@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { SymptomSelector } from "@/components/symptom-selector"
 import { FuzzyPanel } from "@/components/fuzzy-panel"
@@ -10,39 +11,8 @@ import { BayesianGraph } from "@/components/bayesian-graph"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-
-type DiseaseResult = {
-	disease: string
-	probability: number
-	description?: string
-	precautions?: string[]
-}
-
-type FuzzyDetail = {
-	symptom: string
-	weight: number
-	mu_low: number
-	mu_medium: number
-	mu_high: number
-	mf_sum: number
-	input_centroid: number
-	dominant_set: "LOW" | "MEDIUM" | "HIGH"
-	p_laplace: number
-	evidence_score: number
-	top_disease: string
-}
-
-type DiagnosisResponse = {
-	top5: DiseaseResult[]
-	all_results: DiseaseResult[]
-	fuzzy_details: FuzzyDetail[]
-	cluster_scores: Record<string, number>
-	top_disease?: string
-	graph_data: {
-		nodes: Array<{ id: string; label: string; type: string }>
-		edges: Array<{ source: string; target: string; weight: number; type: string }>
-	}
-}
+import { Skeleton } from "@/components/ui/skeleton"
+import type { DiagnosisResponse } from "@/lib/types"
 
 export default function DashboardPage() {
 	const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([])
@@ -65,9 +35,15 @@ export default function DashboardPage() {
 				throw new Error(payload && "detail" in payload ? payload.detail || "Diagnosis failed" : "Diagnosis failed")
 			}
 			setDiagnosisResult(payload as DiagnosisResponse)
+			toast.success("Diagnosis complete", {
+				description: `Top prediction: ${(payload as DiagnosisResponse).top5[0]?.disease ?? "N/A"}`,
+			})
 		} catch (err) {
 			setDiagnosisResult(null)
 			setError(err instanceof Error ? err.message : "Unexpected error")
+			toast.error("Diagnosis failed", {
+				description: err instanceof Error ? err.message : "Unexpected error",
+			})
 		} finally {
 			setIsLoading(false)
 		}
@@ -93,17 +69,37 @@ export default function DashboardPage() {
 						{isLoading ? <Loader2 className="animate-spin" /> : null}
 						{isLoading ? "Running Diagnosis..." : "Run Diagnosis"}
 					</Button>
-					<FuzzyPanel
-						fuzzyDetails={diagnosisResult?.fuzzy_details ?? []}
-						clusterScores={diagnosisResult?.cluster_scores ?? {}}
-					/>
+					{isLoading ? (
+						<Card>
+							<CardContent className="space-y-3 py-4">
+								<Skeleton className="h-4 w-1/3" />
+								<Skeleton className="h-16 w-full" />
+								<Skeleton className="h-16 w-full" />
+							</CardContent>
+						</Card>
+					) : (
+						<FuzzyPanel
+							fuzzyDetails={diagnosisResult?.fuzzy_details ?? []}
+							clusterScores={diagnosisResult?.cluster_scores ?? {}}
+						/>
+					)}
 				</div>
 
 				<div className="space-y-4 md:col-span-3">
-					{diagnosisResult ? (
+					{isLoading ? (
+						<div className="space-y-4">
+							<Skeleton className="h-52 w-full" />
+							<Skeleton className="h-112.5 w-full" />
+						</div>
+					) : diagnosisResult ? (
 						<>
 							<ResultsPanel results={diagnosisResult.top5} />
-							<BayesianGraph graphData={diagnosisResult.graph_data} />
+							<BayesianGraph
+								graphData={diagnosisResult.graph_data}
+								fuzzyDetails={diagnosisResult.fuzzy_details}
+								topProbability={diagnosisResult.top5[0]?.probability}
+								heightClass="h-140"
+							/>
 						</>
 					) : (
 						<Card>
