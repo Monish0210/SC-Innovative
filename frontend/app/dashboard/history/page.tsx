@@ -1,8 +1,7 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { HistoryList } from "@/components/history-list"
 import type { DiagnosisResponse } from "@/lib/types"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -24,71 +23,22 @@ export default async function DashboardHistoryPage() {
 		take: 50,
 	})
 
+	const historyItems = diagnoses.map((entry) => ({
+		id: entry.id,
+		topDisease: entry.topDisease,
+		topProbability: entry.topProbability,
+		createdAt: entry.createdAt.toISOString(),
+		symptoms: entry.symptoms,
+		fullResults: entry.fullResults as unknown as DiagnosisResponse,
+	}))
+
 	return (
-		<div className="mx-auto w-full max-w-6xl p-4 md:p-6">
-			<Card>
-				<CardHeader>
-					<CardTitle>Diagnosis History</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-2">
-					{diagnoses.length === 0 ? (
-						<p className="text-sm text-muted-foreground">No diagnosis records yet.</p>
-					) : (
-						diagnoses.map((entry) => {
-							const payload = entry.fullResults as unknown as DiagnosisResponse
-							return (
-								<details key={entry.id} className="rounded-lg border bg-card p-3">
-									<summary className="cursor-pointer list-none">
-										<div className="flex flex-wrap items-center justify-between gap-2">
-											<div>
-												<p className="text-sm font-semibold">{entry.topDisease}</p>
-												<p className="text-xs text-muted-foreground">
-													{new Date(entry.createdAt).toLocaleString()}
-												</p>
-											</div>
-											<Badge>{entry.topProbability.toFixed(2)}%</Badge>
-										</div>
-									</summary>
-
-									<div className="mt-3 space-y-3 border-t pt-3">
-										<div>
-											<p className="mb-1 text-xs font-medium text-muted-foreground">Symptoms</p>
-											<div className="flex flex-wrap gap-1.5">
-												{entry.symptoms.map((symptom) => (
-													<Badge key={`${entry.id}-${symptom}`} variant="secondary">
-														{symptom}
-													</Badge>
-												))}
-											</div>
-										</div>
-
-										<div className="overflow-x-auto rounded-md border">
-											<table className="w-full text-sm">
-												<thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-													<tr>
-														<th className="p-2">Rank</th>
-														<th className="p-2">Disease</th>
-														<th className="p-2">Probability</th>
-													</tr>
-												</thead>
-												<tbody>
-													{payload.top5?.map((result, index) => (
-														<tr key={`${entry.id}-${result.disease}`} className="border-t">
-															<td className="p-2">{index + 1}</td>
-															<td className="p-2">{result.disease}</td>
-															<td className="p-2">{result.probability.toFixed(2)}%</td>
-														</tr>
-													))}
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</details>
-							)
-						})
-					)}
-				</CardContent>
-			</Card>
+		<div className="min-h-screen bg-zinc-50 dark:bg-(--bg-page)">
+			<div className="mx-auto w-full max-w-6xl px-6 py-8">
+				<h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-(--text-1)">History</h1>
+				<p className="mb-6 mt-1 text-sm text-zinc-500 dark:text-(--text-2)">Your previous diagnoses</p>
+				<HistoryList diagnoses={historyItems} />
+			</div>
 		</div>
 	)
 }

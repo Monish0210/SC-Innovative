@@ -72,20 +72,20 @@ export function SymptomSelector({ selectedSymptoms, onChange }: SymptomSelectorP
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Symptoms</CardTitle>
+		<Card className="rounded-xl border border-zinc-200 bg-white p-4 shadow-none">
+			<CardHeader className="mb-3 flex-row items-center justify-between space-y-0 p-0">
+				<CardTitle className="text-sm font-semibold text-zinc-900">Symptoms</CardTitle>
+				{selectedSymptoms.length > 0 ? (
+					<span className="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">{selectedSymptoms.length} selected</span>
+				) : null}
 			</CardHeader>
-			<CardContent className="space-y-3">
-				<div className="text-sm text-muted-foreground">
-					{selectedSymptoms.length} symptoms selected
-				</div>
+			<CardContent className="space-y-3 p-0">
 
 				<Popover open={open} onOpenChange={setOpen}>
 					<PopoverTrigger
 						className={cn(
 							buttonVariants({ variant: "outline" }),
-							"w-full justify-between"
+							"h-9 w-full justify-between rounded-md border-zinc-200 bg-white text-sm text-zinc-600 hover:border-zinc-300 hover:bg-white"
 						)}
 					>
 						<span>{loading ? "Loading symptoms..." : "Search and select symptoms"}</span>
@@ -117,14 +117,14 @@ export function SymptomSelector({ selectedSymptoms, onChange }: SymptomSelectorP
 					</PopoverContent>
 				</Popover>
 
-				<div className="flex flex-wrap gap-2">
+				<div className="mt-2 flex flex-wrap gap-1.5">
 					{selectedSymptoms.map((symptom) => (
-						<Badge key={symptom} variant="secondary" className="h-7 gap-1 px-2">
+						<Badge key={symptom} variant="outline" className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-zinc-100 px-2 py-1 text-xs text-zinc-800">
 							<span>{symptom}</span>
 							<Button
 								variant="ghost"
 								size="icon-xs"
-								className="size-4 rounded-full"
+								className="ml-0.5 size-4 rounded-full text-zinc-400 hover:text-zinc-700"
 								onClick={() => removeSymptom(symptom)}
 							>
 								<X className="size-3" />

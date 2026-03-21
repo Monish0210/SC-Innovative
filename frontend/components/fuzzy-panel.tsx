@@ -1,29 +1,7 @@
 "use client"
 
-import {
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Cell,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts"
-
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress"
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table"
 import type { FuzzyDetail } from "@/lib/types"
-import { cn } from "@/lib/utils"
 
 type FuzzyPanelProps = {
 	fuzzyDetails: FuzzyDetail[]
@@ -35,136 +13,94 @@ export function FuzzyPanel({ fuzzyDetails, clusterScores }: FuzzyPanelProps) {
 		return null
 	}
 
-	const chartData = Object.entries(clusterScores)
+	const clusterData = Object.entries(clusterScores)
 		.map(([cluster, score]) => ({
 			cluster,
 			score,
 		}))
 		.sort((a, b) => b.score - a.score)
 
-	const topDisease = fuzzyDetails[0]?.top_disease ?? ""
-
-	const getClusterColor = (score: number) => {
-		if (score === 0) {
-			return "#9ca3af"
+	const getSeverityClasses = (dominantSet: FuzzyDetail["dominant_set"]) => {
+		if (dominantSet === "HIGH") {
+			return "border border-red-100 bg-red-50 text-red-600"
 		}
-		if (score < 0.4) {
-			return "#2563eb"
+		if (dominantSet === "MEDIUM") {
+			return "border border-amber-100 bg-amber-50 text-amber-600"
 		}
-		return "#7c3aed"
+		return "border border-blue-100 bg-blue-50 text-blue-600"
 	}
 
-	const MembershipBar = ({
-		label,
-		value,
-		indicatorClass,
-	}: {
-		label: string
-		value: number
-		indicatorClass: string
-	}) => (
-		<Progress value={Math.max(0, Math.min(value * 100, 100))} indicatorClassName={indicatorClass}>
-			<ProgressLabel>{label}</ProgressLabel>
-			<ProgressValue>{() => value.toFixed(3)}</ProgressValue>
-		</Progress>
-	)
+	const getClusterWidthClass = (score: number) => {
+		if (score >= 0.9) return "w-[90%]"
+		if (score >= 0.8) return "w-[80%]"
+		if (score >= 0.7) return "w-[70%]"
+		if (score >= 0.6) return "w-[60%]"
+		if (score >= 0.5) return "w-[50%]"
+		if (score >= 0.4) return "w-[40%]"
+		if (score >= 0.3) return "w-[30%]"
+		if (score >= 0.2) return "w-[20%]"
+		if (score >= 0.1) return "w-[10%]"
+		return "w-[5%]"
+	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Fuzzy Inference Details</CardTitle>
+		<Card className="rounded-xl border border-zinc-200 bg-white p-4 shadow-none">
+			<CardHeader className="p-0 pb-1">
+				<CardTitle className="text-sm font-semibold text-zinc-900">Fuzzy Analysis</CardTitle>
 			</CardHeader>
-			<CardContent className="space-y-8">
-				<section className="space-y-4">
-					<h3 className="text-sm font-semibold">Fuzzification (Step 1 + 2)</h3>
-					<div className="space-y-5">
-						{fuzzyDetails.map((detail) => (
-							<div key={detail.symptom} className="space-y-3 rounded-lg border p-3">
-								<div className="flex flex-wrap items-center gap-2">
-									<Badge variant="outline">{detail.symptom}</Badge>
-									<Badge variant="secondary">w={detail.weight}</Badge>
-									<Badge>{detail.dominant_set}</Badge>
-								</div>
+			<CardContent className="space-y-3 p-0">
+				<div>
+					{fuzzyDetails.map((detail) => (
+						<div key={detail.symptom} className="flex items-center gap-2 border-b border-zinc-50 py-1.5 last:border-0">
+							<p className="w-24 shrink-0 truncate text-xs font-medium text-zinc-700">{detail.symptom}</p>
+							<span className={`shrink-0 rounded px-1.5 py-0.5 text-xs ${getSeverityClasses(detail.dominant_set)}`}>
+								{detail.dominant_set === "MEDIUM" ? "MED" : detail.dominant_set}
+							</span>
+							<p className="ml-auto text-xs font-mono text-zinc-400">
+								L:{detail.mu_low.toFixed(3)} M:{detail.mu_medium.toFixed(3)} H:{detail.mu_high.toFixed(3)} Σ={detail.mf_sum.toFixed(3)}
+							</p>
+						</div>
+					))}
+				</div>
 
-								<MembershipBar label="LOW" value={detail.mu_low} indicatorClass="bg-blue-500" />
-								<MembershipBar
-									label="MEDIUM"
-									value={detail.mu_medium}
-									indicatorClass="bg-purple-500"
-								/>
-								<MembershipBar label="HIGH" value={detail.mu_high} indicatorClass="bg-red-500" />
-
-								<div
-									className={cn(
-										"text-xs font-medium",
-										Math.abs(detail.mf_sum - 1) < 1e-6 ? "text-green-600" : "text-red-600"
-									)}
-								>
-									Partition of Unity check: {detail.mf_sum.toFixed(3)}
+				<div>
+					<p className="mb-2 mt-3 text-xs text-zinc-500">Cluster activation</p>
+					<div className="space-y-1">
+						{clusterData.map((item) => (
+							<div key={item.cluster} className="flex items-center gap-2 py-0.5">
+								<p className="w-28 shrink-0 truncate text-xs text-zinc-500">{item.cluster}</p>
+								<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
+									<div className={`h-full rounded-full bg-indigo-500 ${getClusterWidthClass(item.score)}`} />
 								</div>
-								<div className="text-xs text-muted-foreground">
-									Severity weight: {detail.input_centroid.toFixed(3)}
-								</div>
+								<p className="w-8 text-right text-xs tabular-nums text-zinc-400">{item.score.toFixed(2)}</p>
 							</div>
 						))}
 					</div>
-				</section>
+				</div>
 
-				<section className="space-y-4">
-					<h3 className="text-sm font-semibold">Syndrome Cluster Activation Scores</h3>
-					<div className="h-72 w-full rounded-lg border p-2">
-						<ResponsiveContainer width="100%" height="100%">
-							<BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 12, left: 40, bottom: 8 }}>
-								<CartesianGrid strokeDasharray="3 3" />
-								<XAxis type="number" domain={[0, 1]} />
-								<YAxis
-									dataKey="cluster"
-									type="category"
-									width={150}
-									tick={{ fontSize: 11 }}
-								/>
-								<Tooltip formatter={(value: number) => value.toFixed(3)} />
-								<Bar dataKey="score" radius={[0, 4, 4, 0]}>
-									{chartData.map((entry) => (
-										<Cell key={entry.cluster} fill={getClusterColor(entry.score)} />
-									))}
-								</Bar>
-							</BarChart>
-						</ResponsiveContainer>
-					</div>
-				</section>
-
-				<section className="space-y-4">
-					<h3 className="text-sm font-semibold">
-						Fuzzy-Bayesian Evidence Scores (evidence = ic × P(S|D))
-					</h3>
-					{topDisease ? (
-						<div className="text-xs text-muted-foreground">Top disease reference: {topDisease}</div>
-					) : null}
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Symptom</TableHead>
-								<TableHead>P_laplace(S|TopDisease)</TableHead>
-								<TableHead>Severity Score (ic)</TableHead>
-								<TableHead>Evidence Score</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
+				<div>
+					<p className="mb-2 mt-3 text-xs text-zinc-500">Evidence scores</p>
+					<table className="w-full text-xs">
+						<thead>
+							<tr className="border-b border-zinc-100 text-zinc-400">
+								<th className="py-1 text-left font-medium">Symptom</th>
+								<th className="py-1 text-right font-medium">P(S|D)</th>
+								<th className="py-1 text-right font-medium">ic</th>
+								<th className="py-1 text-right font-medium">ev</th>
+							</tr>
+						</thead>
+						<tbody>
 							{fuzzyDetails.map((detail) => (
-								<TableRow key={`${detail.symptom}-evidence`}>
-									<TableCell>{detail.symptom}</TableCell>
-									<TableCell>{(detail.p_laplace ?? 0).toFixed(6)}</TableCell>
-									<TableCell>{detail.input_centroid.toFixed(3)}</TableCell>
-									<TableCell>{(detail.evidence_score ?? 0).toFixed(6)}</TableCell>
-								</TableRow>
+								<tr key={`${detail.symptom}-evidence`} className="border-b border-zinc-50 text-xs last:border-0">
+									<td className="py-1 text-zinc-700 font-medium">{detail.symptom}</td>
+									<td className="py-1 text-right tabular-nums text-zinc-500">{(detail.p_laplace ?? 0).toFixed(3)}</td>
+									<td className="py-1 text-right tabular-nums text-zinc-500">{detail.input_centroid.toFixed(3)}</td>
+									<td className="py-1 text-right tabular-nums text-zinc-500">{(detail.evidence_score ?? 0).toFixed(3)}</td>
+								</tr>
 							))}
-						</TableBody>
-					</Table>
-					<p className="text-xs text-muted-foreground">
-						All selected symptoms contribute. P values use Laplace smoothing — minimum ≈ 0.010
-					</p>
-				</section>
+						</tbody>
+					</table>
+				</div>
 			</CardContent>
 		</Card>
 	)

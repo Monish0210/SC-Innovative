@@ -29,14 +29,14 @@ export function DiseaseInfoCard({ disease, probability, description, precautions
       : "bg-slate-100 text-slate-600"
 
   return (
-    <Card className="w-full">
-      <CardContent className="pt-5">
+    <Card className="w-full rounded-xl border border-slate-200 bg-white p-6 shadow-none dark:border-border dark:bg-(--bg-card)">
+      <CardContent className="p-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">About This Diagnosis</p>
+            <p className="text-sm font-medium tracking-wide text-slate-500 uppercase">About This Diagnosis</p>
           </div>
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-900">{disease}</p>
+            <p className="font-semibold text-slate-900 dark:text-(--text-1)">{disease}</p>
             <Badge className={probabilityBadgeClass}>{probability.toFixed(2)}%</Badge>
           </div>
         </div>
@@ -44,21 +44,21 @@ export function DiseaseInfoCard({ disease, probability, description, precautions
         <div className="my-3 border-t border-slate-100" />
 
         <section>
-          <h4 className="mb-2 text-sm font-semibold text-slate-700">What is {disease}?</h4>
-          <p className="text-sm leading-relaxed text-slate-600">{description}</p>
+          <h4 className="mb-2 text-sm font-semibold text-slate-700 dark:text-(--text-2)">What is {disease}?</h4>
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-(--text-2)">{description}</p>
         </section>
 
         <div className="my-3 border-t border-slate-100" />
 
         <section>
-          <h4 className="mb-3 text-sm font-semibold text-slate-700">Recommended Precautions</h4>
+          <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-(--text-2)">Recommended Precautions</h4>
           <div>
             {cleanPrecautions.map((item, index) => (
               <div key={`${item}-${index}`} className="mb-2 flex items-start gap-2">
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
                   {index + 1}
                 </div>
-                <p className="text-sm text-slate-600">{capitalizeFirst(item)}</p>
+                <p className="text-sm text-slate-600 dark:text-(--text-2)">{capitalizeFirst(item)}</p>
               </div>
             ))}
           </div>

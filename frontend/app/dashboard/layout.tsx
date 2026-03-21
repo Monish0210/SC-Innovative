@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 	}
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="min-h-screen bg-(--bg-page) text-(--text-1)">
 			<Navbar userEmail={session.user.email} />
 			<main>{children}</main>
 		</div>
